@@ -4,3 +4,4 @@
 .idea/usage.statistics.xml
 .idea/shelf/
 **/*.ipynb_checkpoints/
+venv/
