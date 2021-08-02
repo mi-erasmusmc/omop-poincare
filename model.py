@@ -20,6 +20,7 @@ detail and explaining module usage."""
 # --------------------------------------------------------------------------- #
 import torch
 from torch.nn import Embedding
+import numpy as np
 
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
@@ -62,8 +63,11 @@ class Model(torch.nn.Module):
         e = self.embedding(inputs)
         o = e.narrow(dim=1, start=1, length=e.size(1) - 1)
         s = e.narrow(dim=1, start=0, length=1).expand_as(o)
-
         return self.dist(s, o)
+
+    def dist_2(self, u, v):
+        d = 1 + 2 * np.linalg.norm(u-v, axis=None)**2 / ((1 - np.linalg.norm(u, axis=None)**2) * (1 - np.linalg.norm(v, axis=None)**2) + self.epsilon)
+        return np.arccosh(d)
 
 # --------------------------------------------------------------------------- #
 #                  LOCAL FUNCTIONS                                            #
