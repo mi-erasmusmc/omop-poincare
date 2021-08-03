@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 from scipy.sparse import lil_matrix
 import numpy as np
+import torch
 
 def read_data(data):
     return pd.read_csv(data, sep=',')
@@ -93,3 +94,13 @@ def load_dataset(path, skip_stats=True, remove_duplicates=False):
     print(path_lens[-10:])
 
     return ids, weights, names.tolist(), neighbors, diff_summed, relations
+
+
+def lorentzian_inner_product(u, v, keepdim=False):
+    uv = u * v
+    uv.narrow(-1, 0, 1).mul_(-1)
+    return torch.sum(uv, dim=-1, keepdim=keepdim)
+
+
+def eucl_dist(u, v):
+    return np.linalg.norm(u-v)

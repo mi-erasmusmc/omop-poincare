@@ -21,7 +21,7 @@ detail and explaining module usage."""
 import torch
 from torch.nn import Embedding
 import numpy as np
-
+from helpers import lorentzian_inner_product
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
 # --------------------------------------------------------------------------- #
@@ -58,6 +58,11 @@ class Model(torch.nn.Module):
         x = 1 + 2 * sqdist / ((1 - squnorm) * (1 - sqvnorm)) + self.epsilon
         z = torch.sqrt(x ** 2 - 1)
         return torch.log(x + z)
+
+    # def dist(self, u, v):
+    #     sqdist = -lorentzian_inner_product(u, v) + self.epsilon
+    #     z = torch.sqrt(sqdist ** 2 - 1)
+    #     return torch.log(sqdist + z)
 
     def forward(self, inputs):
         e = self.embedding(inputs)
