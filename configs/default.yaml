@@ -1,0 +1,5 @@
+# default.yaml
+shared.io.py:
+  read_data:
+    path: "data/dist1Sample.csv"
+

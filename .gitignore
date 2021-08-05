@@ -5,3 +5,8 @@
 .idea/shelf/
 **/*.ipynb_checkpoints/
 venv/
+output/geodesic.png
+output/hierarchy.png
+output/hierarchy_embed.png
+output/tf_proj_lab.tsv
+output/tf_proj_vec.tsv

@@ -27,9 +27,9 @@ from tqdm import tqdm
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
 # --------------------------------------------------------------------------- #
-from riemannianSgd import RiemannianSGD
+from riemannian_sgd import RiemannianSGD
 from model import Model
-import helpers
+import shared
 
 # --------------------------------------------------------------------------- #
 #                  META DATA                                                  #
@@ -50,7 +50,7 @@ EPOCH = 25
 # --------------------------------------------------------------------------- #
 #                  EXPORTED FUNCTIONS                                         #
 # --------------------------------------------------------------------------- #
-data, objects, weights = helpers.load_edge_list(Path("data", "dist1Sample.csv"))
+data, objects, weights = shared.load_edge_list(Path("data", "dist1Sample.csv"))
 print(data.shape)
 print(objects)
 # data = BatchedDataset(idx, objects, weights, opt.negs, opt.batchsize,
