@@ -17,9 +17,8 @@
 # --------------------------------------------------------------------------- #
 #                  OTHER IMPORTS                                              #
 # --------------------------------------------------------------------------- #
-from torch import sum, sqrt, log
-from torch.nn import Embedding, Module
-from numpy import linalg, arccosh
+import torch
+import numpy as np
 
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
@@ -41,7 +40,7 @@ __status__ = 'Development'
 # --------------------------------------------------------------------------- #
 #                  CLASS DEFINITION                                           #
 # --------------------------------------------------------------------------- #
-class Model(Module):
+class Model(torch.nn.Module):
     """Pytorch model of a Poincaré embedding.
     """
 
@@ -53,7 +52,7 @@ class Model(Module):
         :param epsilon: Small value to improve stability during convergence
         """
         super().__init__()
-        self.embedding = Embedding(size, dim, sparse=False)
+        self.embedding = torch.nn.Embedding(size, dim, sparse=False)
         self.embedding.weight.data.uniform_(-init_weights, init_weights)
         self.epsilon = epsilon
 
@@ -63,12 +62,12 @@ class Model(Module):
         :param v: Another point defined by a vector
         :return: Poincaré distance between points u and v
         """
-        sq_dist = sum((u - v) ** 2, dim=-1)
-        squ_norm = sum(u ** 2, dim=-1)
-        sqv_norm = sum(v ** 2, dim=-1)
+        sq_dist = torch.sum((u - v) ** 2, dim=-1)
+        squ_norm = torch.sum(u ** 2, dim=-1)
+        sqv_norm = torch.sum(v ** 2, dim=-1)
         x = 1 + 2 * sq_dist / ((1 - squ_norm) * (1 - sqv_norm)) + self.epsilon
-        z = sqrt(x ** 2 - 1)
-        return log(x + z)
+        z = torch.sqrt(x ** 2 - 1)
+        return torch.log(x + z)
 
     def forward(self, inputs):
         e = self.embedding(inputs)
@@ -84,10 +83,10 @@ class Model(Module):
         :param v: Another point defined by a vector
         :return: Poincaré distance between points u and v
         """
-        d = 1 + 2 * linalg.norm(u - v, axis=None) ** 2 / (
-                    (1 - linalg.norm(u, axis=None) ** 2) * (
-                        1 - linalg.norm(v, axis=None) ** 2) + self.epsilon)
-        return arccosh(d)
+        d = 1 + 2 * np.linalg.norm(u - v, axis=None) ** 2 / (
+                    (1 - np.linalg.norm(u, axis=None) ** 2) * (
+                        1 - np.linalg.norm(v, axis=None) ** 2) + self.epsilon)
+        return np.arccosh(d)
 
 # --------------------------------------------------------------------------- #
 #                  END OF FILE                                                #

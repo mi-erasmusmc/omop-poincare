@@ -21,6 +21,7 @@ from pathlib import Path
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from IPython import display
 
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
@@ -139,6 +140,18 @@ def plot_geodesic():
     plt.savefig(Path("output", "geodesic.png"), dpi=300)
     plt.show()
 
+
+def plot_train_embed(model, mean_rank, epoch, epoch_loss):
+    coordinates = model.embedding.weight.detach().numpy()
+    # pl.annotate(dictData[x], (coordinates[x,0], coordinates[x,1]), fontsize=4)
+    plt.figure()
+    plt.gca().clear()
+    plt.xlim(-1, 1)
+    plt.ylim(-1, 1)
+    plt.title(f"Epoch: {epoch}, mean rank: {round(mean_rank, 3)}, last loss: {round(epoch_loss, 3)}")
+    plt.scatter(coordinates[:,0], coordinates[:,1],s=1)
+    display.clear_output(wait=True)
+    display.display(plt.gcf())
 # --------------------------------------------------------------------------- #
 #                  LOCAL FUNCTIONS                                            #
 # --------------------------------------------------------------------------- #
