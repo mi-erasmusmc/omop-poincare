@@ -78,8 +78,8 @@ def eval_reconstruction(model, num_relations, neighbors, diff_summed):
     for i in tqdm(range(voc_size)):
         dists = model.dist(model.embedding.weight[None, i], model.embedding.weight)
         dists[i] = 1e12
-        sorted_idx = dists.argsort()
-        rank_sum += in_array(neighbors[i], sorted_idx.numpy())
+        sorted_idx = dists.argsort().detach().cpu().numpy()
+        rank_sum += in_array(neighbors[i], sorted_idx)
     return (rank_sum - diff_summed) / num_relations
 
 

@@ -19,17 +19,21 @@ from pathlib import Path
 # --------------------------------------------------------------------------- #
 #                  OTHER IMPORTS                                              #
 # --------------------------------------------------------------------------- #
+import csv
 import torch
-from torch.distributions import Categorical
-from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
 # --------------------------------------------------------------------------- #
-from riemannian_sgd import RiemannianSGD
-from model import Model
-import shared
+from shared.plot import plot_geodesic, plot_hierarchy, plot_train_embed,\
+    get_dict_data
+from shared.io import read_data, read_ref
+from shared.math import eval_reconstruction
+from train import init_torch_objects, train
 
 # --------------------------------------------------------------------------- #
 #                  META DATA                                                  #
@@ -39,9 +43,9 @@ __status__ = 'Development'
 # --------------------------------------------------------------------------- #
 #                  CONSTANTS                                                  #
 # --------------------------------------------------------------------------- #
-OUT_DIMENSIONS = 2
-NEG_SAMPLES = 5
-EPOCH = 25
+# OUT_DIMENSIONS = 2
+# NEG_SAMPLES = 5
+# EPOCH = 25
 
 # --------------------------------------------------------------------------- #
 #                  GLOBAL VARIABLES                                           #
@@ -50,55 +54,42 @@ EPOCH = 25
 # --------------------------------------------------------------------------- #
 #                  EXPORTED FUNCTIONS                                         #
 # --------------------------------------------------------------------------- #
-data, objects, weights = shared.load_edge_list(Path("data", "dist1Sample.csv"))
-print(data.shape)
-print(objects)
-# data = BatchedDataset(idx, objects, weights, opt.negs, opt.batchsize,
-#                       opt.ndproc, opt.burnin > 0, opt.dampening)
 
 # --------------------------------------------------------------------------- #
 #                  LOCAL FUNCTIONS                                            #
 # --------------------------------------------------------------------------- #
-# data = helpers.read_data(Path("data", "dist1Sample.csv"))
-#print(data)
-
-cat_dist = Categorical(probs=torch.from_numpy(weights)) # was weights
-#print(cat_dist)
-unif_dist = Categorical(probs=torch.ones(data.shape[0],) / data.shape[0])
-
-model = Model(dim=OUT_DIMENSIONS, size=data.shape[0])
-optimizer = RiemannianSGD(model.parameters())
-
-loss_func = CrossEntropyLoss()
-batch_X = torch.zeros(10, NEG_SAMPLES + 2, dtype=torch.long)
-batch_y = torch.zeros(10, dtype=torch.long)
-
-while True:
-    if EPOCH < 20:
-        lr = 0.003
-        sampler = cat_dist
-    else:
-        lr = 0.3
-        sampler = unif_dist
-
-    perm = torch.randperm(data.shape[0])
-    dataset_rnd = data.loc[perm, ]
-
-    for i in tqdm(range(0, data.shape[0] - data.shape[0] % 10, 10)):
-        batch_X[:, :2] = dataset_rnd[i: i + 10]
-
-        for j in range(10):
-            a = set(sampler.sample([2 * NEG_SAMPLES]).numpy())
-            negatives = list(a - (set(neighbors[batch_X[j, 0]]) | set(neighbors[batch_X[j, 1]])))
-            batch_X[j, 2 : len(negatives)+2] = torch.LongTensor(negatives[:NEG_SAMPLES])
-
-        optimizer.zero_grad()
-        preds = model(batch_X)
-
-        loss = loss_func(preds.neg(), batch_y)
-        loss.backward()
-        optimizer.step(lr=lr)
 
 # --------------------------------------------------------------------------- #
 #                  END OF FILE                                                #
 # --------------------------------------------------------------------------- #
+if __name__ == '__main__':
+    OUT_DIMENSIONS = 10
+    NEG_SAMPLES = 50
+    EPOCH = 300
+    torch.set_default_dtype(torch.float64)
+
+    # %%
+
+    # Plot geodesic comparison between Poincaré and Euclidean
+    # plot_geodesic()
+
+    # %%
+
+    # Load edge data
+    data_path = Path("data", "dist1Sample.csv")
+    data, weights, objects, neighbors, diff_summed, num_relations = read_data(data_path)
+
+    # load concept reference
+    ref_path = Path('data', 'ref.csv')
+    ref = read_ref(ref_path)
+
+    # initialize torch objects for the training loop
+    model, optimizer, loss_func = init_torch_objects(objects, OUT_DIMENSIONS)
+    # model = model.to("cuda:0")
+    # ToDo: implement function to load embedding and continue training
+
+    train(data=data, weights=weights, objects=objects, neighbors=neighbors,
+          diff_summed=diff_summed, num_relations=num_relations,
+          model=model, optimizer=optimizer, loss_func=loss_func,
+          out_dimensions=OUT_DIMENSIONS, n_neg_samples=NEG_SAMPLES, n_epochs=EPOCH,
+          n_burn_in=40)
