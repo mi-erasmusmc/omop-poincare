@@ -47,7 +47,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
           model, optimizer, loss_func,
           out_dimensions, n_neg_samples, n_epochs, n_burn_in=40):
 
-    batch_size = 64
+    batch_size = 4
 
     # initialize some additional (temporary) objects for the training loop
     batch_X, batch_y, cat_dist, unif_dist = __init_data_objects(objects,
