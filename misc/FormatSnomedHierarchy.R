@@ -3,12 +3,12 @@ library(dplyr)
 
 test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
 
-dist1 <- test %>%
-  filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
-  mutate(weight = min_levels_of_separation) %>%
-  select(c(descendant_concept_id, ancestor_concept_id, weight)) %>%
-  rename(id1 = descendant_concept_id, id2 = ancestor_concept_id)
-write.csv(dist1, file="C:/Users/luish/Desktop/dist1.csv", row.names=FALSE)
+# dist1 <- test %>%
+#   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
+#   mutate(weight = min_levels_of_separation) %>%
+#   select(c(descendant_concept_id, ancestor_concept_id, weight)) %>%
+#   rename(id1 = descendant_concept_id, id2 = ancestor_concept_id)
+# write.csv(dist1, file="C:/Users/luish/Desktop/dist1.csv", row.names=FALSE)
 
 # 443580 - systolic heart failure
 # 316139 - heart failure
@@ -18,22 +18,72 @@ write.csv(dist1, file="C:/Users/luish/Desktop/dist1.csv", row.names=FALSE)
 # 4182210 - dementia
 # 139900 - urticaria
 # 80809 - rheumatoid arthritis
-set <- c(443580, 316139, 313217, 4103183, 441840, 4182210, 139900, 80809)
-output <- test %>%
+# set <- c(443580, 316139, 313217, 4103183, 441840, 4182210, 139900, 80809)
+
+################################################################################
+set <- runPlp$covariateSummary %>%
+  filter(covariateValue != 0 & !is.na(covariateValue) & conceptId != 0) %>%
+  filter(analysisId == 102) %>% # only from condition table
+  select(conceptId) %>%
+  unlist()
+
+clinical_finding_concept_id <- 441840
+set <- c(set, clinical_finding_concept_id)
+
+# ensure no concepts in set are invalid, this will give false as there is no ancestry available
+data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)
+set %in% data
+
+################################################################################
+`%notin%` <- Negate(`%in%`)
+
+# another ancestor exists within the set
+output_internal <- test %>%
   filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
   filter(descendant_concept_id %in% set) %>%
   filter(ancestor_concept_id %in% set)
+data_ordered <- output_internal[order(output_internal$min_levels_of_separation, output_internal$max_levels_of_separation, decreasing = FALSE), ]
+data_output_internal <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
 
-data_ordered <- output[order(output$min_levels_of_separation, output$max_levels_of_separation, decreasing = FALSE), ]
-data_highest <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
+infer_ancestor <- data_output_internal %>%
+  filter(ancestor_concept_id == clinical_finding_concept_id)
 
+i <- 1
+for (i in 1:nrow(infer_ancestor)) {
+  concept_id <- infer_ancestor$descendant_concept_id[i]
+  output_infer <- test %>%
+    filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
+    filter(descendant_concept_id == concept_id & ancestor_concept_id != clinical_finding_concept_id)
+  
+  output_infer_ordered <- output_infer[order(output_infer$min_levels_of_separation, output_infer$max_levels_of_separation, decreasing = FALSE), ]
+  
+  
+}
+
+
+
+set2 <- c(set, 441840)
+
+# no ancestor exists within the set
+output_alone <- test %>%
+  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
+  filter(descendant_concept_id %in% set2) %>%
+  filter(ancestor_concept_id %notin% set2)
+
+data_ordered_alone <- output_alone[order(output_alone$min_levels_of_separation, output_alone$max_levels_of_separation, decreasing = FALSE), ]
+data_output_alone <- data_ordered_alone[!duplicated(data_ordered_alone$descendant_concept_id), ]
+data_output_alone <- output_alone
+# output_alone2 <- test %>%
+  
 
 # data <- data.frame(ancestor_concept_id = numeric(), descendant_concept_id = numeric(),
 #                    min_levels_of_separation = numeric(), max_levels_of_separation = numeric())
 
 
-write.csv(data_highest, file="C:/Users/luish/Downloads/pars.csv", row.names=FALSE)
+write.csv(data_output_internal, file="C:/Users/luish/Downloads/pars.csv", row.names=FALSE)
 
+ttt <- refOriginal %>%
+  filter(concept_id %in% set)
 
 
 # dist2 <- test %>%
