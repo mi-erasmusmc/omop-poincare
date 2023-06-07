@@ -1,14 +1,40 @@
 library(magrittr)
 library(dplyr)
 
-test <- read.csv("~/Downloads/vocabulary_download_v5_{30bee1a0-3913-4cf1-81f5-30ab1c144f12}_1644587788636/CONCEPT_ANCESTOR.csv", sep='\t')
+test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
 
 dist1 <- test %>%
   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
   mutate(weight = min_levels_of_separation) %>%
   select(c(descendant_concept_id, ancestor_concept_id, weight)) %>%
   rename(id1 = descendant_concept_id, id2 = ancestor_concept_id)
-write.csv(dist1, file="~/Desktop/dist1.csv", row.names=FALSE)
+write.csv(dist1, file="C:/Users/luish/Desktop/dist1.csv", row.names=FALSE)
+
+# 443580 - systolic heart failure
+# 316139 - heart failure
+# 313217 - atrial fibrillation
+# 4103183 - cardiac finding
+# 441840 - clinical finding
+# 4182210 - dementia
+# 139900 - urticaria
+# 80809 - rheumatoid arthritis
+set <- c(443580, 316139, 313217, 4103183, 441840, 4182210, 139900, 80809)
+output <- test %>%
+  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
+  filter(descendant_concept_id %in% set) %>%
+  filter(ancestor_concept_id %in% set)
+
+data_ordered <- output[order(output$min_levels_of_separation, output$max_levels_of_separation, decreasing = FALSE), ]
+data_highest <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
+
+
+# data <- data.frame(ancestor_concept_id = numeric(), descendant_concept_id = numeric(),
+#                    min_levels_of_separation = numeric(), max_levels_of_separation = numeric())
+
+
+write.csv(data_highest, file="C:/Users/luish/Downloads/pars.csv", row.names=FALSE)
+
+
 
 # dist2 <- test %>%
 #   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1 |
@@ -60,12 +86,12 @@ write.csv(dist1, file="~/Desktop/dist1.csv", row.names=FALSE)
 # write.csv(dist6, file="~/Desktop/dist6.csv", row.names=FALSE)
 
 
-refOriginal = read.table("~/Downloads/vocabulary_download_v5_{30bee1a0-3913-4cf1-81f5-30ab1c144f12}_1644587788636/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
+refOriginal = read.table("C:/Users/luish/Downloads/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
 
 ref <- refOriginal %>%
   select(concept_id, concept_name, concept_class_id, standard_concept) %>%
   filter(concept_class_id == "Clinical Finding")
-write.csv(ref, file="~/Desktop/ref.csv", row.names=FALSE)
+write.csv(ref, file="C:/Users/luish/Desktop/ref.csv", row.names=FALSE)
 
 nSample <- 100 # was 10
 delta <- 1
