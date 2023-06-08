@@ -56,7 +56,9 @@ for (i in 1:nrow(infer_ancestor)) {
     filter(descendant_concept_id == concept_id & ancestor_concept_id != clinical_finding_concept_id)
   
   output_infer_ordered <- output_infer[order(output_infer$min_levels_of_separation, output_infer$max_levels_of_separation, decreasing = FALSE), ]
-  
+  for (j in 1:length(infer_ancestor)) {
+    
+  }
   
 }
 
