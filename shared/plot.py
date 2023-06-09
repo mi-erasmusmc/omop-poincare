@@ -45,11 +45,12 @@ __status__ = 'Development'
 # --------------------------------------------------------------------------- #
 #                  EXPORTED FUNCTIONS                                         #
 # --------------------------------------------------------------------------- #
-def plot_hierarchy(data, objects, ref):
+def plot_hierarchy(data, objects, ref, labels = True):
     """Plots a labeled hierarchy of nodes and edges.
     :param data: Pair list of edges
     :param objects: List of unique concept identifiers
     :param ref: List of unique concept labels
+    :param labels: Show or hide labels
     :return:
     """
     # create a dictionary of objects and labels
@@ -69,7 +70,7 @@ def plot_hierarchy(data, objects, ref):
     # print(nx.info(g))
     plt.figure()
     nx.draw(g, pos=pos, node_size=10, node_color="lightgray", width=0.2)
-    nx.draw_networkx_labels(g, labels=dict_data, pos=pos, font_size=4)
+    nx.draw_networkx_labels(g, labels= dict_data if labels else None, pos=pos, font_size=4)
     plt.savefig(Path("output", "hierarchy.png"), dpi=300)
     plt.show()
 

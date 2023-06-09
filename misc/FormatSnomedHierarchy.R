@@ -1,7 +1,7 @@
 library(magrittr)
 library(dplyr)
 
-test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
+test <- read.csv("~/Downloads/vocab_v5/CONCEPT_ANCESTOR.csv", sep='\t')
 
 # dist1 <- test %>%
 #   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
@@ -20,6 +20,7 @@ test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
 # 80809 - rheumatoid arthritis
 # set <- c(443580, 316139, 313217, 4103183, 441840, 4182210, 139900, 80809)
 
+
 ################################################################################
 set <- runPlp$covariateSummary %>%
   filter(covariateValue != 0 & !is.na(covariateValue) & conceptId != 0) %>%
@@ -31,22 +32,41 @@ clinical_finding_concept_id <- 441840
 set <- c(set, clinical_finding_concept_id)
 
 # ensure no concepts in set are invalid, this will give false as there is no ancestry available
-data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)
-set %in% data
+# data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)
+# set %in% data
 
 ################################################################################
 `%notin%` <- Negate(`%in%`)
 
 # another ancestor exists within the set
 output_internal <- test %>%
-  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
-  filter(descendant_concept_id %in% set) %>%
-  filter(ancestor_concept_id %in% set)
+  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>% # remove the self-reference, we do not need it
+  filter(descendant_concept_id %in% set) %>% # descendant is in our set
+  filter(ancestor_concept_id %in% set) # and at the same time also the ancestor is in our set, btw, since we manually added clinical finding all will be selected, but we know which ones have clinical finding
+
+to_add_later <- output_internal %>%
+  filter(ancestor_concept_id == clinical_finding_concept_id)
+
+#######
+# some testing here
+output_internal <- test %>%
+  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>% # remove the self-reference, we do not need it
+  filter(descendant_concept_id %in% set)
+
+set <- c(output_internal$ancestor_concept_id, output_internal$descendant_concept_id)
+set <- unique(set)
+######
+
+
+# order and keep only the one with smallest level of separation
 data_ordered <- output_internal[order(output_internal$min_levels_of_separation, output_internal$max_levels_of_separation, decreasing = FALSE), ]
 data_output_internal <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
+data_output_internal <- bind_rows(data_output_internal, to_add_later)
+
 
 infer_ancestor <- data_output_internal %>%
-  filter(ancestor_concept_id == clinical_finding_concept_id)
+  filter(ancestor_concept_id == clinical_finding_concept_id) %>%
+  filter(min_levels_of_separation != 1 & max_levels_of_separation != 1) # some of the concepts may actually have clinical finding as 1-distance parent, so remove those for the next step 
 
 i <- 1
 for (i in 1:nrow(infer_ancestor)) {
@@ -56,12 +76,22 @@ for (i in 1:nrow(infer_ancestor)) {
     filter(descendant_concept_id == concept_id & ancestor_concept_id != clinical_finding_concept_id)
   
   output_infer_ordered <- output_infer[order(output_infer$min_levels_of_separation, output_infer$max_levels_of_separation, decreasing = FALSE), ]
-  for (j in 1:length(infer_ancestor)) {
+  
+  j <- 2
+
+  for (j in 1:nrow(infer_ancestor)) {
     
+    to_test <- infer_ancestor$descendant_concept_id[j]
+    common_ancestor <- test %>%
+      filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>%
+      filter(descendant_concept_id == to_test & ancestor_concept_id ==  output_infer_ordered$ancestor_concept_id[1])
+    writeLines(paste0("iteration: ",j , ": ",common_ancestor$ancestor_concept_id))
   }
   
 }
 
+data_output_internal
+write.csv(data_output_internal, file="~/Downloads/pars.csv", row.names=FALSE)
 
 
 set2 <- c(set, 441840)
@@ -82,7 +112,7 @@ data_output_alone <- output_alone
 #                    min_levels_of_separation = numeric(), max_levels_of_separation = numeric())
 
 
-write.csv(data_output_internal, file="C:/Users/luish/Downloads/pars.csv", row.names=FALSE)
+write.csv(data_output_internal, file="~/Downloads/pars.csv", row.names=FALSE)
 
 ttt <- refOriginal %>%
   filter(concept_id %in% set)
@@ -138,12 +168,12 @@ ttt <- refOriginal %>%
 # write.csv(dist6, file="~/Desktop/dist6.csv", row.names=FALSE)
 
 
-refOriginal = read.table("C:/Users/luish/Downloads/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
+refOriginal = read.table("~/Downloads/vocab_v5/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
 
 ref <- refOriginal %>%
   select(concept_id, concept_name, concept_class_id, standard_concept) %>%
   filter(concept_class_id == "Clinical Finding")
-write.csv(ref, file="C:/Users/luish/Desktop/ref.csv", row.names=FALSE)
+write.csv(ref, file="~/Downloads/vocab_v5/ref.csv", row.names=FALSE)
 
 nSample <- 100 # was 10
 delta <- 1
