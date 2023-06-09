@@ -15,7 +15,6 @@ analyses[[1]] <- FeatureExtraction::createAnalysisDetails(
   analysisId = analysisId,
   sqlFileName = sqlFileName,
   includedCovariateConceptIds = conceptIds,
-  # includedCovariateIds = 4285898023,
   parameters = list(
     analysisId = analysisId,
     analysisName = sprintf("Condition concepts in days %d - %d", windowStart, windowEnd),

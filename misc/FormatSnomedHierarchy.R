@@ -22,7 +22,7 @@ test <- read.csv("~/Downloads/vocab_v5/CONCEPT_ANCESTOR.csv", sep='\t')
 
 
 ################################################################################
-set <- runPlp$covariateSummary %>%
+set <- runPlp_gerda$covariateSummary %>%
   filter(!is.na(covariateValue)) %>%
   filter(conceptId != 0) %>%
   # filter(covariateValue != 0) %>%
