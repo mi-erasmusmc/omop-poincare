@@ -23,7 +23,9 @@ test <- read.csv("~/Downloads/vocab_v5/CONCEPT_ANCESTOR.csv", sep='\t')
 
 ################################################################################
 set <- runPlp$covariateSummary %>%
-  filter(covariateValue != 0 & !is.na(covariateValue) & conceptId != 0) %>%
+  filter(!is.na(covariateValue)) %>%
+  filter(conceptId != 0) %>%
+  # filter(covariateValue != 0) %>%
   filter(analysisId == 102) %>% # only from condition table
   select(conceptId) %>%
   unlist()
@@ -38,15 +40,6 @@ set <- c(set, clinical_finding_concept_id)
 ################################################################################
 `%notin%` <- Negate(`%in%`)
 
-# another ancestor exists within the set
-output_internal <- test %>%
-  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>% # remove the self-reference, we do not need it
-  filter(descendant_concept_id %in% set) %>% # descendant is in our set
-  filter(ancestor_concept_id %in% set) # and at the same time also the ancestor is in our set, btw, since we manually added clinical finding all will be selected, but we know which ones have clinical finding
-
-to_add_later <- output_internal %>%
-  filter(ancestor_concept_id == clinical_finding_concept_id)
-
 #######
 # some testing here
 output_internal <- test %>%
@@ -57,11 +50,21 @@ set <- c(output_internal$ancestor_concept_id, output_internal$descendant_concept
 set <- unique(set)
 ######
 
+# another ancestor exists within the set
+output_internal <- test %>%
+  filter(min_levels_of_separation != 0 & max_levels_of_separation != 0) %>% # remove the self-reference, we do not need it
+  filter(descendant_concept_id %in% set) %>% # descendant is in our set
+  filter(ancestor_concept_id %in% set) # and at the same time also the ancestor is in our set, btw, since we manually added clinical finding all will be selected, but we know which ones have clinical finding
+
+# to_add_later <- output_internal %>%
+#   filter(ancestor_concept_id == clinical_finding_concept_id)
+
 
 # order and keep only the one with smallest level of separation
 data_ordered <- output_internal[order(output_internal$min_levels_of_separation, output_internal$max_levels_of_separation, decreasing = FALSE), ]
 data_output_internal <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
-data_output_internal <- bind_rows(data_output_internal, to_add_later)
+# data_output_internal <- bind_rows(data_output_internal, to_add_later)
+write.csv(data_output_internal, file="~/Downloads/pars.csv", row.names=FALSE)
 
 
 infer_ancestor <- data_output_internal %>%

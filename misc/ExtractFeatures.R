@@ -1,30 +1,26 @@
 library(PatientLevelPrediction)
-# get connection and data from Eunomia
+
 connectionDetails <- Eunomia::getEunomiaConnectionDetails()
 Eunomia::createCohorts(connectionDetails)
 
-covSet <- FeatureExtraction::createCovariateSettings(
-  useDemographicsGender = T,
-  useDemographicsAgeGroup = T,
-  endDays = -1
-)
+conceptIds <- readRDS("~/Downloads/concept_ids.rds")
 
 subType <- "all"
-windowStart <- c(-365, -180, -30)
-windowEnd <- c(0, 0, 0)
-analysisIdOffset = 930
+windowStart <- -365
+windowEnd <- 0
+analysisId = 999 # make sure this is three digits or it will be zero-padded and confuse henrik
 sqlFileName <- "DomainConcept.sql"
 analyses <- list()
 analyses[[1]] <- FeatureExtraction::createAnalysisDetails(
-  analysisId = analysisIdOffset+1,
+  analysisId = analysisId,
   sqlFileName = sqlFileName,
-  includedCovariateConceptIds = c(81893, 4182210, 316139, 313217),
-  # includedCovariateIds = c(81893930),
+  includedCovariateConceptIds = conceptIds,
+  # includedCovariateIds = 4285898023,
   parameters = list(
-    analysisId = analysisIdOffset,
-    analysisName = sprintf("Condition concepts in days %d - %d", windowStart[1], windowEnd[1]),
-    startDay = windowStart[1],
-    endDay = windowEnd[1],
+    analysisId = analysisId,
+    analysisName = sprintf("Condition concepts in days %d - %d", windowStart, windowEnd),
+    startDay = windowStart,
+    endDay = windowEnd,
     subType = subType,
     domainId = "Condition",
     domainTable	= "condition_occurrence",
@@ -38,8 +34,6 @@ covariateSettings <- FeatureExtraction::createDetailedCovariateSettings(
   analyses = analyses
 )
 
-covSet <- covariateSettings
-
 databaseDetails <- PatientLevelPrediction::createDatabaseDetails(
   connectionDetails = connectionDetails,
   cdmDatabaseSchema = "main",
@@ -52,15 +46,13 @@ databaseDetails <- PatientLevelPrediction::createDatabaseDetails(
   cdmDatabaseName = "eunomia"
 )
 
-restrictPlpDataSettings <- PatientLevelPrediction::createRestrictPlpDataSettings(
-  firstExposureOnly = T,
-  washoutPeriod = 365
-)
-
 plpData <- PatientLevelPrediction::getPlpData(
   databaseDetails = databaseDetails,
-  restrictPlpDataSettings = restrictPlpDataSettings,
-  covariateSettings = covSet
+  restrictPlpDataSettings = PatientLevelPrediction::createRestrictPlpDataSettings(),
+  covariateSettings = covariateSettings
 )
 
+savePlpData(plpData = plpData, "plpData_dementia_poincare")
+
 View(dplyr::collect(plpData$covariateData$covariates))
+
