@@ -47,7 +47,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
           model, optimizer, loss_func,
           out_dimensions, n_neg_samples, n_epochs, n_burn_in=40):
 
-    batch_size = 4
+    batch_size = 256
 
     # initialize some additional (temporary) objects for the training loop
     batch_X, batch_y, cat_dist, unif_dist = __init_data_objects(objects,
@@ -59,6 +59,18 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
     mean_rank = 0.0
     last_loss = 0.0
     n = 0
+
+    print("Now loading last embedding..")
+    load = torch.load(f"output/poincare_model_dim_{out_dimensions}.pt")
+    print(f"Resuming from epoch {load['epoch']}")
+    n = load["epoch"] + 1
+
+    model.load_state_dict(load["state_dict"])
+    print(f"Best mean rank was {load['mean_rank']}")
+    # mean_rank = load["mean_rank"]
+    # loss = load["loss"]
+    objects = load["names"]
+
     while n < n_epochs:
         print(f"Epoch: {n}")
         if n < n_burn_in:
@@ -86,8 +98,8 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
                 #     a - (set(data[batch_X[j, 0]]) | set(data[batch_X[j, 1]])))
                 # batch_X[j, 2:len(negatives) + 2] = torch.LongTensor(
                 #     negatives[:NEG_SAMPLES])
-            # batch_X = batch_X.to("cuda:0")
-            # batch_y = batch_y.to("cuda:0")
+            batch_X = batch_X.to("cuda:0")
+            batch_y = batch_y.to("cuda:0")
 
             optimizer.zero_grad()
             preds = model(batch_X)
@@ -136,12 +148,12 @@ def init_torch_objects(objects, out_dimensions):
 
 def __init_data_objects(objects, batch_size, weights, neg_samples):
     cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights))
-    # cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights).to('cuda:0'))
+    cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights).to('cuda:0'))
     # particularly important for  hyperboloid embedding stability
-    # unif_dist = torch.distributions.Categorical(
-    #     probs=(torch.ones(len(objects), ) / len(objects)).to('cuda:0'))
     unif_dist = torch.distributions.Categorical(
-        probs=(torch.ones(len(objects), ) / len(objects)))
+        probs=(torch.ones(len(objects), ) / len(objects)).to('cuda:0'))
+    # unif_dist = torch.distributions.Categorical(
+    #     probs=(torch.ones(len(objects), ) / len(objects)))
     batch_X = torch.zeros(batch_size, neg_samples + 2, dtype=torch.long)
     batch_y = torch.zeros(batch_size, dtype=torch.long)
     return batch_X, batch_y, cat_dist, unif_dist
