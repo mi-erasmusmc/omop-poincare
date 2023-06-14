@@ -169,15 +169,19 @@ def read_data(path, skip_stats=True, remove_duplicates=False):
     return ids, weights, names.tolist(), neighbors, diff_summed, relations
 
 
-def get_dict_data(objects, ref):
+def get_dict_data(objects, ref, dict_type="name"):
     """Create a dictionary of concept identifiers and concept labels.
     :param objects: List of unique concept identifiers.
     :param ref: List of unique concept labels.
+    :param dict_type: "name" for string names or "concept" for concept IDs
     :return: Dictionary of concept identifiers and concept labels.
     """
     dict_data = dict(enumerate(objects))
     print(f"dictData[1]: {dict_data[1]}")
-    # replace concept_id with concept_name in dict
-    for key, value in dict_data.items():
-        dict_data[key] = ref.loc[ref['concept_id'] == value].concept_name.values[0]
+
+    if dict_type == "name":
+        # replace concept_id with concept_name in dict
+        for key, value in dict_data.items():
+            dict_data[key] = ref.loc[ref['concept_id'] == value].concept_name.values[0]
+
     return dict_data

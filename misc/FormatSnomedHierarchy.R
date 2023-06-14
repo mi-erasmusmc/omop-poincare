@@ -239,3 +239,10 @@ dist1Sample <- man %>%
 write.csv(dist1Sample, file="~/Desktop/dist1HeartDis.csv", row.names=FALSE, quote = FALSE)
 
 
+##### LOAD DATA
+
+options(arrow.int64_downcast = FALSE)
+plpData <- PatientLevelPrediction::loadPlpData("D:/git/omop-poincare/data/ims_germany")
+mappedData <- PatientLevelPrediction:::toSparseM(plpData)
+
+
