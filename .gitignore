@@ -7,3 +7,4 @@
 venv/
 output/*
 data/*
+.Rproj.user

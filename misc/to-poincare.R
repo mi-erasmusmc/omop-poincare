@@ -104,6 +104,9 @@ class(result) <- "plpData"
 
 PatientLevelPrediction::savePlpData(result, "poincareData")
 
+################
+
+
 populationSettings <- PatientLevelPrediction::createStudyPopulationSettings(
   binary = T, 
   includeAllOutcomes = T, 
@@ -120,14 +123,15 @@ populationSettings <- PatientLevelPrediction::createStudyPopulationSettings(
 )
 
 analyses <- c(
-  "GERDA"
+  "IPCI"
 )
 
-analysesIds <- list(targetId = c(0), outcomeId = c(6243))
+analysesIds <- list(targetId = c(1115), outcomeId = c(1032))
 library(PatientLevelPrediction)
 library(DeepPatientLevelPrediction)
 
-plpDataTesting <- PatientLevelPrediction::loadPlpData("poincareData")
+plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir_original)
+plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir_poincare)
 
 # plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir)
 
