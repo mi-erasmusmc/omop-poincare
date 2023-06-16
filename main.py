@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Brief description to fit on single line.
@@ -63,7 +64,7 @@ __status__ = 'Development'
 #                  END OF FILE                                                #
 # --------------------------------------------------------------------------- #
 if __name__ == '__main__':
-    OUT_DIMENSIONS = 10
+    OUT_DIMENSIONS = 20
     NEG_SAMPLES = 50
     EPOCH = 300
     torch.set_default_dtype(torch.float64)
@@ -76,7 +77,7 @@ if __name__ == '__main__':
     # %%
 
     # Load edge data
-    data_path = Path("data", "dist1Sample.csv")
+    data_path = Path("data", "dist1.csv")
     data, weights, objects, neighbors, diff_summed, num_relations = read_data(data_path)
 
     # load concept reference
@@ -85,7 +86,7 @@ if __name__ == '__main__':
 
     # initialize torch objects for the training loop
     model, optimizer, loss_func = init_torch_objects(objects, OUT_DIMENSIONS)
-    # model = model.to("cuda:0")
+    model = model.to("cuda:0")
     # ToDo: implement function to load embedding and continue training
 
     train(data=data, weights=weights, objects=objects, neighbors=neighbors,
