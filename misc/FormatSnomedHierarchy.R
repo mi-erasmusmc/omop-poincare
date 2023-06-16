@@ -1,7 +1,7 @@
 library(magrittr)
 library(dplyr)
 
-test <- read.csv("~/Downloads/vocab_v5/CONCEPT_ANCESTOR.csv", sep='\t')
+test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
 
 # dist1 <- test %>%
 #   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
@@ -30,8 +30,16 @@ set <- runPlp_gerda$covariateSummary %>%
   select(conceptId) %>%
   unlist()
 
+set2 <- runPlp_ipci$covariateSummary %>%
+  filter(!is.na(covariateValue)) %>%
+  filter(conceptId != 0) %>%
+  # filter(covariateValue != 0) %>%
+  filter(analysisId == 102) %>% # only from condition table
+  select(conceptId) %>%
+  unlist()
+
 clinical_finding_concept_id <- 441840
-set <- c(set, clinical_finding_concept_id)
+set <- c(set, set2, clinical_finding_concept_id)
 
 # ensure no concepts in set are invalid, this will give false as there is no ancestry available
 # data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)
@@ -64,7 +72,7 @@ output_internal <- test %>%
 data_ordered <- output_internal[order(output_internal$min_levels_of_separation, output_internal$max_levels_of_separation, decreasing = FALSE), ]
 data_output_internal <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
 # data_output_internal <- bind_rows(data_output_internal, to_add_later)
-write.csv(data_output_internal, file="~/Downloads/pars.csv", row.names=FALSE)
+write.csv(data_output_internal, file="C:/Users/luish/Downloads/pars.csv", row.names=FALSE)
 
 
 infer_ancestor <- data_output_internal %>%

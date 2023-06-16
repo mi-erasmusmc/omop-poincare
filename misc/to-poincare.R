@@ -18,23 +18,6 @@ covariateRef <- data$covariateData$covariateRef %>%
 analysisRef <- data$covariateData$analysisRef %>%
   collect()
 
-################
-test_set_mask <- runPlp_o$covariateSummary %>%
-  dplyr::filter(CovariateCount < 3000) %>%
-  select(covariateId)
-
-rowIds_test <- covariates %>%
-  filter(covariateId %in% test_set_mask$covariateId) %>%
-  select(rowId) %>%
-  unique()
-  
-
-
-################
-
-
-# covariates_wide <- pivot_wider(covariates, names_from = covariateId, values_from = covariateValue, values_fill = 0)
-
 lab <- readr::read_tsv("D:/git/omop-poincare/output/tf_proj_lab.tsv", col_names = FALSE)
 vec <- readr::read_tsv("D:/git/omop-poincare/output/tf_proj_vec.tsv", col_names = FALSE)
 colnames(lab) <- c("covariateId")
@@ -102,7 +85,7 @@ class(result) <- "plpData"
 
 # attr(covariateData, "metaData") <- NULL
 
-PatientLevelPrediction::savePlpData(result, "poincareData")
+PatientLevelPrediction::savePlpData(result, file.path("data","gerda_poincare_abstract"))
 
 ################
 

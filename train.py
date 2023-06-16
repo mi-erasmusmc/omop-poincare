@@ -45,15 +45,23 @@ __status__ = 'Development'
 # --------------------------------------------------------------------------- #
 def train(data, weights, objects, neighbors, diff_summed, num_relations,
           model, optimizer, loss_func,
-          out_dimensions, n_neg_samples, n_epochs, n_burn_in=40):
+          out_dimensions, n_neg_samples, n_epochs, n_burn_in=40, device="cpu"):
 
-    batch_size = 4
+    if device == "cuda:1":
+        batch_size = 265
+    else:
+        batch_size = 4
 
     # initialize some additional (temporary) objects for the training loop
     batch_X, batch_y, cat_dist, unif_dist = __init_data_objects(objects,
                                                                 batch_size,
                                                                 weights,
-                                                                n_neg_samples)
+                                                                n_neg_samples,
+                                                                device)
+
+    if device == "cuda:1":
+        batch_X = batch_X.to(device)
+        batch_y = batch_y.to(device)
 
     epoch_loss = 0.0
     mean_rank = 0.0
@@ -70,7 +78,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
 
         perm = torch.randperm(data.shape[0])
         # dataset_rnd = data.loc[perm, ]
-        dataset_rnd = torch.as_tensor(data[perm, ])
+        dataset_rnd = torch.as_tensor(data[perm, ]).to(device)
 
         for i in tqdm(range(0, data.shape[0] - data.shape[0] % batch_size, batch_size)):
             batch_X[:, :2] = dataset_rnd[i: i + batch_size]
@@ -134,14 +142,22 @@ def init_torch_objects(objects, out_dimensions):
 #                  LOCAL FUNCTIONS                                            #
 # --------------------------------------------------------------------------- #
 
-def __init_data_objects(objects, batch_size, weights, neg_samples):
-    cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights))
-    # cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights).to('cuda:0'))
+def __init_data_objects(objects, batch_size, weights, neg_samples, device):
+
+    if "cuda:1" == device:
+        cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights).to(device))
+    else:
+        cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights))
     # particularly important for  hyperboloid embedding stability
     # unif_dist = torch.distributions.Categorical(
     #     probs=(torch.ones(len(objects), ) / len(objects)).to('cuda:0'))
-    unif_dist = torch.distributions.Categorical(
-        probs=(torch.ones(len(objects), ) / len(objects)))
+
+    if "cuda:1" == device:
+        unif_dist = torch.distributions.Categorical(
+            probs=(torch.ones(len(objects), ) / len(objects)).to(device))
+    else:
+        unif_dist = torch.distributions.Categorical(
+            probs=(torch.ones(len(objects), ) / len(objects)))
     batch_X = torch.zeros(batch_size, neg_samples + 2, dtype=torch.long)
     batch_y = torch.zeros(batch_size, dtype=torch.long)
     return batch_X, batch_y, cat_dist, unif_dist
