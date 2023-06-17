@@ -7,15 +7,16 @@ library(readr)
 options(andromedaTempFolder = "D:/temp")
 options(arrow.int64_downcast = FALSE)
 
-plpDataDir <- "D:/git/omop-poincare/data/ims_germany"
+plpDataDir <- "D:/git/omop-poincare/data/data_original/optum_ehr"
+# plpDataDir <- "D:/git/omop-poincare/data/data_poincare/emc_ipci_old"
 
-data <- PatientLevelPrediction::loadPlpData(plpDataDir)
+data_in <- PatientLevelPrediction::loadPlpData(plpDataDir)
 
-covariates <- data$covariateData$covariates %>%
+covariates <- data_in$covariateData$covariates %>%
   collect()
-covariateRef <- data$covariateData$covariateRef %>%
+covariateRef <- data_in$covariateData$covariateRef %>%
   collect()
-analysisRef <- data$covariateData$analysisRef %>%
+analysisRef <- data_in$covariateData$analysisRef %>%
   collect()
 
 lab <- readr::read_tsv("D:/git/omop-poincare/output/tf_proj_lab.tsv", col_names = FALSE)
@@ -46,6 +47,10 @@ covariateRef_final <- data.frame(
   analysisId=999,
   conceptId=1:ncol(vec)
 )
+
+#### remove this once we have correct ipci data
+covariates_embedding_final <- covariates_embedding_final %>%
+  dplyr::filter(!is.na(covariateValue))
 
 
 data <- Andromeda::andromeda(covariates = covariates_embedding_final,
@@ -85,59 +90,6 @@ class(result) <- "plpData"
 
 # attr(covariateData, "metaData") <- NULL
 
-PatientLevelPrediction::savePlpData(result, file.path("data","gerda_poincare_abstract"))
+PatientLevelPrediction::savePlpData(result, file.path("./data", "data_poincare", "optum_extended_ses"))
 
 ################
-
-
-populationSettings <- PatientLevelPrediction::createStudyPopulationSettings(
-  binary = T, 
-  includeAllOutcomes = T, 
-  firstExposureOnly = T, 
-  washoutPeriod = 365, 
-  removeSubjectsWithPriorOutcome = F, 
-  priorOutcomeLookback = 99999, 
-  requireTimeAtRisk = T, 
-  minTimeAtRisk = 1, 
-  riskWindowStart = 1, 
-  startAnchor = 'cohort start', 
-  endAnchor = 'cohort start', 
-  riskWindowEnd = 1825
-)
-
-analyses <- c(
-  "IPCI"
-)
-
-analysesIds <- list(targetId = c(1115), outcomeId = c(1032))
-library(PatientLevelPrediction)
-library(DeepPatientLevelPrediction)
-
-plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir_original)
-plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir_poincare)
-
-# plpDataTesting <- PatientLevelPrediction::loadPlpData(plpDataDir)
-
-result <- list(
-  plpData = plpDataTesting,
-  outcomeId = analysesIds$outcomeId[1],
-  analysisId = paste0(analyses[1],"_","Poincare"),
-  analysisName = paste0(analyses[1],"_","Poincare"),
-  populationSettings = populationSettings,
-  splitSettings = createDefaultSplitSetting(splitSeed = 1000, testFraction = 0.25, trainFraction = 0.75),
-  sampleSettings = createSampleSettings(),
-  featureEngineeringSettings = createFeatureEngineeringSettings(),
-  preprocessSettings = createPreprocessSettings(),
-  modelSettings = setGradientBoostingMachine(seed = 1000, nthread = 10),
-  logSettings = createLogSettings(),
-  executeSettings = createExecuteSettings(runSplitData = T,
-                                          runSampleData = F,
-                                          runfeatureEngineering = F,
-                                          runPreprocessData = F,
-                                          runModelDevelopment = T,
-                                          runCovariateSummary = T),
-  saveDirectory = file.path('D:/git/transfer-learning/models-ResNet-poincare')
-)
-
-do.call(PatientLevelPrediction::runPlp, result)
-

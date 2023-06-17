@@ -10,52 +10,63 @@ runPlp_opses <- readRDS("D:/git/transfer-learning/models-full-l1/OPSES_Full/plpR
 runPlp_ipci <- readRDS("D:/git/transfer-learning/models-full-l1/IPCI_Full/plpResult/runPlp.rds")
 
 ################################################################################
+
+# ensure no concepts in set are invalid, this will give false as there is no ancestry available
+full_set <- c(test$ancestor_concept_id, test$descendant_concept_id)
+# indx <- which(!(set %in% full_set))
+# set[indx]
+
+
 set_gerda <- runPlp_gerda$covariateSummary %>%
   filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  filter(conceptId %in% full_set) %>% # concept is part of most recent hierarchy
   mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
-saveRDS(set_gerda, file.path("./data", "set_gerda.RDS"))
 
 set_mdcr <- runPlp_mdcr$covariateSummary %>%
   filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  filter(conceptId %in% full_set) %>% # concept is part of most recent hierarchy
   mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
-saveRDS(set_mdcr, file.path("./data", "set_mdcr.RDS"))
 
 set_opehr <- runPlp_opehr$covariateSummary %>%
   filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  filter(conceptId %in% full_set) %>% # concept is part of most recent hierarchy
   mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
-saveRDS(set_opehr, file.path("./data", "set_opehr.RDS"))
 
 set_opses <- runPlp_opses$covariateSummary %>%
   filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
   mutate(conceptId=as.integer(conceptId)) %>%
+  filter(conceptId %in% full_set) %>% # concept is part of most recent hierarchy
   select(conceptId) %>%
   unlist()
-saveRDS(set_opses, file.path("./data", "set_opses.RDS"))
 
 set_ipci <- runPlp_ipci$covariateSummary %>%
   filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  filter(conceptId %in% full_set) %>% # concept is part of most recent hierarchy
   mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
+
+saveRDS(set_gerda, file.path("./data", "set_gerda.RDS"))
+saveRDS(set_mdcr, file.path("./data", "set_mdcr.RDS"))
+saveRDS(set_opehr, file.path("./data", "set_opehr.RDS"))
+saveRDS(set_opses, file.path("./data", "set_opses.RDS"))
 saveRDS(set_ipci, file.path("./data", "set_ipci.RDS"))
 
 clinical_finding_concept_id <- 441840
 set <- c(set_gerda, set_mdcr, set_opehr, set_opses, set_ipci, clinical_finding_concept_id)
+set <- unique(set)
 
-# ensure no concepts in set are invalid, this will give false as there is no ancestry available
-# data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)
-# set %in% data
 
 ################################################################################
 `%notin%` <- Negate(`%in%`)
