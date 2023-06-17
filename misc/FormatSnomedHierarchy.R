@@ -3,43 +3,55 @@ library(dplyr)
 
 test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
 
-# dist1 <- test %>%
-#   filter(min_levels_of_separation == 1 & max_levels_of_separation == 1) %>%
-#   mutate(weight = min_levels_of_separation) %>%
-#   select(c(descendant_concept_id, ancestor_concept_id, weight)) %>%
-#   rename(id1 = descendant_concept_id, id2 = ancestor_concept_id)
-# write.csv(dist1, file="C:/Users/luish/Desktop/dist1.csv", row.names=FALSE)
-
-# 443580 - systolic heart failure
-# 316139 - heart failure
-# 313217 - atrial fibrillation
-# 4103183 - cardiac finding
-# 441840 - clinical finding
-# 4182210 - dementia
-# 139900 - urticaria
-# 80809 - rheumatoid arthritis
-# set <- c(443580, 316139, 313217, 4103183, 441840, 4182210, 139900, 80809)
-
+runPlp_gerda <- readRDS("D:/git/transfer-learning/models-full-l1/GERDA_Full/plpResult/runPlp.rds")
+runPlp_mdcr <- readRDS("D:/git/transfer-learning/models-full-l1/MDCR_Full/plpResult/runPlp.rds")
+runPlp_opehr <- readRDS("D:/git/transfer-learning/models-full-l1/OPEHR_Full/plpResult/runPlp.rds")
+runPlp_opses <- readRDS("D:/git/transfer-learning/models-full-l1/OPSES_Full/plpResult/runPlp.rds")
+runPlp_ipci <- readRDS("D:/git/transfer-learning/models-full-l1/IPCI_Full/plpResult/runPlp.rds")
 
 ################################################################################
-set <- runPlp_gerda$covariateSummary %>%
-  filter(!is.na(covariateValue)) %>%
-  filter(conceptId != 0) %>%
-  # filter(covariateValue != 0) %>%
+set_gerda <- runPlp_gerda$covariateSummary %>%
+  filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
+saveRDS(set_gerda, file.path("./data", "set_gerda.RDS"))
 
-set2 <- runPlp_ipci$covariateSummary %>%
-  filter(!is.na(covariateValue)) %>%
-  filter(conceptId != 0) %>%
-  # filter(covariateValue != 0) %>%
+set_mdcr <- runPlp_mdcr$covariateSummary %>%
+  filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
   filter(analysisId == 102) %>% # only from condition table
+  mutate(conceptId=as.integer(conceptId)) %>%
   select(conceptId) %>%
   unlist()
+saveRDS(set_mdcr, file.path("./data", "set_mdcr.RDS"))
+
+set_opehr <- runPlp_opehr$covariateSummary %>%
+  filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
+  filter(analysisId == 102) %>% # only from condition table
+  mutate(conceptId=as.integer(conceptId)) %>%
+  select(conceptId) %>%
+  unlist()
+saveRDS(set_opehr, file.path("./data", "set_opehr.RDS"))
+
+set_opses <- runPlp_opses$covariateSummary %>%
+  filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
+  filter(analysisId == 102) %>% # only from condition table
+  mutate(conceptId=as.integer(conceptId)) %>%
+  select(conceptId) %>%
+  unlist()
+saveRDS(set_opses, file.path("./data", "set_opses.RDS"))
+
+set_ipci <- runPlp_ipci$covariateSummary %>%
+  filter(!is.na(covariateValue) & covariateValue != 0.0) %>%
+  filter(analysisId == 102) %>% # only from condition table
+  mutate(conceptId=as.integer(conceptId)) %>%
+  select(conceptId) %>%
+  unlist()
+saveRDS(set_ipci, file.path("./data", "set_ipci.RDS"))
 
 clinical_finding_concept_id <- 441840
-set <- c(set, set2, clinical_finding_concept_id)
+set <- c(set_gerda, set_mdcr, set_opehr, set_opses, set_ipci, clinical_finding_concept_id)
 
 # ensure no concepts in set are invalid, this will give false as there is no ancestry available
 # data <- c(data_output_internal$ancestor_concept_id, data_output_internal$descendant_concept_id)

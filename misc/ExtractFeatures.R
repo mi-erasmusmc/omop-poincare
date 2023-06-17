@@ -20,43 +20,54 @@ DATA_SAVE_DIR <- './results'
 # 6243 - dementia outcome - v1
 analysis <- list(target=11931, outcome=6243)
 
-databases <- list(mdcr=list(name="truven_mdcr", version="v2322", sample=1000000), 
-                  opehr=list(name="optum_ehr", version="v2247", sample=1000000),
-                  iqger=list(name="ims_germany", version="v2352", sample=1000000),
-                  opses=list(name="optum_extended_ses", version='v2327', sample=1000000))
+set_gerda <- readRDS(file.path("./data", "set_gerda.RDS"))
+set_mdcr <- readRDS(file.path("./data", "set_mdcr.RDS"))
+set_opehr <- readRDS(file.path("./data", "set_opehr.RDS"))
+set_opses <- readRDS(file.path("./data", "set_opses.RDS"))
+
+databases <- list(mdcr=list(name="truven_mdcr", version="v2322", sample=1000000, conceptIds=set_gerda), 
+                  opehr=list(name="optum_ehr", version="v2247", sample=1000000, conceptIds=set_mdcr),
+                  iqger=list(name="ims_germany", version="v2352", sample=1000000, conceptIds=set_opehr),
+                  opses=list(name="optum_extended_ses", version='v2327', sample=1000000, conceptIds=set_opses))
 
 # ---------------------------------------------------------------------------- #                                                                              #
 #         INPUT: COVARIATE SETTINGS                                            #                                                                              #
 # ---------------------------------------------------------------------------- #
-# conceptIds <- readRDS("~/Downloads/concept_ids.rds")
+conceptIds <- readRDS("~/Downloads/concept_ids.rds")
 
-subType <- "all"
-windowStart <- -365
-windowEnd <- 0
-analysisId = 999 # make sure this is three digits or it will be zero-padded and confuse henrik
-sqlFileName <- "DomainConcept.sql"
-analyses <- list()
-analyses[[1]] <- FeatureExtraction::createAnalysisDetails(
-  analysisId = analysisId,
-  sqlFileName = sqlFileName,
-  includedCovariateConceptIds = conceptIds,
-  parameters = list(
+getCovariateSettings <- function(conceptIds) {
+  subType <- "all"
+  windowStart <- -365
+  windowEnd <- 0
+  analysisId = 999 # make sure this is three digits or it will be zero-padded and confuse henrik
+  sqlFileName <- "DomainConcept.sql"
+  analyses <- list()
+  analyses[[1]] <- FeatureExtraction::createAnalysisDetails(
     analysisId = analysisId,
-    analysisName = sprintf("Condition concepts in days %d - %d", windowStart, windowEnd),
-    startDay = windowStart,
-    endDay = windowEnd,
-    subType = subType,
-    domainId = "Condition",
-    domainTable	= "condition_occurrence",
-    domainConceptId = "condition_concept_id",
-    domainStartDate = "condition_start_date",
-    domainEndDate = "condition_start_date"
+    sqlFileName = sqlFileName,
+    includedCovariateConceptIds = conceptIds,
+    parameters = list(
+      analysisId = analysisId,
+      analysisName = sprintf("Condition concepts in days %d - %d", windowStart, windowEnd),
+      startDay = windowStart,
+      endDay = windowEnd,
+      subType = subType,
+      domainId = "Condition",
+      domainTable	= "condition_occurrence",
+      domainConceptId = "condition_concept_id",
+      domainStartDate = "condition_start_date",
+      domainEndDate = "condition_start_date"
+    )
   )
-)
+  
+  covariateSettings <- FeatureExtraction::createDetailedCovariateSettings(
+    analyses = analyses
+  )
+  
+  return(covariateSettings)
+}
 
-covariateSettings <- FeatureExtraction::createDetailedCovariateSettings(
-  analyses = analyses
-) 
+
 # ---------------------------------------------------------------------------- #                                                                              #
 #         CREATE COHORT TABLES                                                 #                                                                              #
 # ---------------------------------------------------------------------------- # 
@@ -139,7 +150,7 @@ for (database in databases) {
   
   plpData <- PatientLevelPrediction::getPlpData(
     databaseDetails=databaseDetails,
-    covariateSettings = covariateSettings,
+    covariateSettings = getCovariateSettings(database$conceptIds),
     restrictPlpDataSettings = PatientLevelPrediction::createRestrictPlpDataSettings(
       sampleSize = database$sample
     )
