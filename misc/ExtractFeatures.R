@@ -25,15 +25,14 @@ set_mdcr <- readRDS(file.path("./data", "set_mdcr.RDS"))
 set_opehr <- readRDS(file.path("./data", "set_opehr.RDS"))
 set_opses <- readRDS(file.path("./data", "set_opses.RDS"))
 
-databases <- list(mdcr=list(name="truven_mdcr", version="v2322", sample=1000000, conceptIds=set_gerda), 
-                  opehr=list(name="optum_ehr", version="v2247", sample=1000000, conceptIds=set_mdcr),
-                  iqger=list(name="ims_germany", version="v2352", sample=1000000, conceptIds=set_opehr),
+databases <- list(mdcr=list(name="truven_mdcr", version="v2322", sample=1000000, conceptIds=set_mdcr), 
+                  opehr=list(name="optum_ehr", version="v2247", sample=1000000, conceptIds=set_opehr),
+                  iqger=list(name="ims_germany", version="v2352", sample=1000000, conceptIds=set_gerda),
                   opses=list(name="optum_extended_ses", version='v2327', sample=1000000, conceptIds=set_opses))
 
 # ---------------------------------------------------------------------------- #                                                                              #
 #         INPUT: COVARIATE SETTINGS                                            #                                                                              #
 # ---------------------------------------------------------------------------- #
-conceptIds <- readRDS("~/Downloads/concept_ids.rds")
 
 getCovariateSettings <- function(conceptIds) {
   subType <- "all"
