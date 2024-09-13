@@ -80,7 +80,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
         # dataset_rnd = data.loc[perm, ]
         dataset_rnd = torch.as_tensor(data[perm, ]).to(device)
 
-        for i in tqdm(range(0, data.shape[0] - data.shape[0] % batch_size, batch_size)):
+        for i in tqdm(range(0, data.shape[0] - data.shape[0] % batch_size, batch_size), disable=True):
             batch_X[:, :2] = dataset_rnd[i: i + batch_size]
 
             for j in range(batch_size):
@@ -102,6 +102,8 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
 
             loss = loss_func(preds.neg(), batch_y)
             loss.backward()
+
+            model.fix_origin()
             optimizer.step(lr=lr)
 
             # rank and loss output
@@ -132,8 +134,8 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
     return model
 
 
-def init_torch_objects(objects, out_dimensions):
-    model = Model(dim=out_dimensions, size=len(objects))
+def init_torch_objects(objects, out_dimensions, fixed_index):
+    model = Model(dim=out_dimensions, size=len(objects), fixed_index=fixed_index)
     optimizer = RiemannianSGD(model.parameters())
     loss_func = torch.nn.CrossEntropyLoss()
     return model, optimizer, loss_func

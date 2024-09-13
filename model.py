@@ -44,7 +44,7 @@ class Model(torch.nn.Module):
     """Pytorch model of a Poincaré embedding.
     """
 
-    def __init__(self, dim, size, init_weights=1e-3, epsilon=1e-7):
+    def __init__(self, dim, size, fixed_index, init_weights=1e-3, epsilon=1e-7, ):
         """Initializes Poincaré embedding.
         :param dim: Output dimension of the embedding
         :param size: Input dimension of the embedding
@@ -54,6 +54,8 @@ class Model(torch.nn.Module):
         super().__init__()
         self.embedding = torch.nn.Embedding(size, dim, sparse=False)
         self.embedding.weight.data.uniform_(-init_weights, init_weights)
+        self.embedding.weight.data[fixed_index].fill_(epsilon)  # Initialize fixed point at origin
+        self.fixed_index = fixed_index
         self.epsilon = epsilon
 
     def dist(self, u, v):
@@ -74,6 +76,11 @@ class Model(torch.nn.Module):
         o = e.narrow(dim=1, start=1, length=e.size(1) - 1)
         s = e.narrow(dim=1, start=0, length=1).expand_as(o)
         return self.dist(s, o)
+
+    def fix_origin(self):
+        """Fix the embedding of the point at fixed_index to remain at the origin."""
+        with torch.no_grad():
+            self.embedding.weight.data[self.fixed_index].fill_(self.epsilon)
 
     def dist_2(self, u, v):
         """An alternative implementation to calculate the Poincaré distance.
