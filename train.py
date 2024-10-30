@@ -47,8 +47,8 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
           model, optimizer, loss_func,
           out_dimensions, n_neg_samples, n_epochs, n_burn_in=40, device="cpu"):
 
-    if device == "cuda:1":
-        batch_size = 265
+    if device == "cuda:0":
+        batch_size = 4
     else:
         batch_size = 4
 
@@ -59,12 +59,11 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
                                                                 n_neg_samples,
                                                                 device)
 
-    if device == "cuda:1":
+    if device == "cuda:0":
         batch_X = batch_X.to(device)
         batch_y = batch_y.to(device)
 
     epoch_loss = 0.0
-    mean_rank = 0.0
     last_loss = 0.0
     n = 0
     while n < n_epochs:
@@ -94,8 +93,6 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
                 #     a - (set(data[batch_X[j, 0]]) | set(data[batch_X[j, 1]])))
                 # batch_X[j, 2:len(negatives) + 2] = torch.LongTensor(
                 #     negatives[:NEG_SAMPLES])
-            # batch_X = batch_X.to("cuda:0")
-            # batch_y = batch_y.to("cuda:0")
 
             optimizer.zero_grad()
             preds = model(batch_X)
@@ -108,7 +105,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
 
             # rank and loss output
             epoch_loss += loss.item()
-        if n % 5 == 0:
+        if n % 10 == 0:
             with torch.no_grad():
                 mean_rank = eval_reconstruction(model, num_relations, neighbors, diff_summed)
             epoch_loss /= data.shape[0] // batch_size
@@ -120,11 +117,9 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
                 state = {
                     "epoch": n,
                     "state_dict": model.state_dict(),
-                    "mean_rank": mean_rank,
-                    "loss": epoch_loss,
-                    "names": objects
+                    "concept_ids": objects
                 }
-                torch.save(state, f"output/poincare_model_dim_{out_dimensions}.pt")
+                torch.save(state, f"output/poincare_model_dim_{out_dimensions}_epoch_{n}.pt")
             else:
                 # stopping not yet implemented
                 stop += 1
@@ -146,7 +141,7 @@ def init_torch_objects(objects, out_dimensions, fixed_index):
 
 def __init_data_objects(objects, batch_size, weights, neg_samples, device):
 
-    if "cuda:1" == device:
+    if "cuda:0" == device:
         cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights).to(device))
     else:
         cat_dist = torch.distributions.Categorical(probs=torch.from_numpy(weights))
@@ -154,7 +149,7 @@ def __init_data_objects(objects, batch_size, weights, neg_samples, device):
     # unif_dist = torch.distributions.Categorical(
     #     probs=(torch.ones(len(objects), ) / len(objects)).to('cuda:0'))
 
-    if "cuda:1" == device:
+    if "cuda:0" == device:
         unif_dist = torch.distributions.Categorical(
             probs=(torch.ones(len(objects), ) / len(objects)).to(device))
     else:

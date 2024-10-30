@@ -1,9 +1,11 @@
 library(magrittr)
 library(dplyr)
 
-test <- read.csv("~/Downloads/vocabulary_download_v5_{c92fd646-74fd-400e-83fb-8949b7e01f44}_1725629157973/CONCEPT_ANCESTOR.csv", sep='\t')
+test <- read.csv("D:/git/KnowledgeGraph/data/CONCEPT_ANCESTOR.csv", sep='\t')
 
 # conceptsFromModel <- read.csv("~/Desktop/ohdsi-dlc-download/models/strategusOutput_ehr/DeepPatientLevelPredictionModule_3/models/folder-1-1/covariateImportance.csv")
+
+data <- PatientLevelPrediction::loadPlpData("D:/git/KnowledgeGraph/data/targetId_11454_L1/")
 
 set <- data$covariateData$covariateRef %>%
   collect() %>%
@@ -51,7 +53,7 @@ output_internal <- test %>%
 data_ordered <- output_internal[order(output_internal$min_levels_of_separation, output_internal$max_levels_of_separation, decreasing = FALSE), ]
 data_output_internal <- data_ordered[!duplicated(data_ordered$descendant_concept_id), ]
 # data_output_internal <- bind_rows(data_output_internal, to_add_later)
-write.csv(data_output_internal, file="~/Downloads/opehr_concepts.csv", row.names=FALSE)
+write.csv(data_output_internal, file="D:/git/KnowledgeGraph/data/opehr_concepts_11454.csv", row.names=FALSE)
 
 # next line is a test to take all min levle of speration == 1, rather than removing all duplicates of descendant_concept_id, which means there are now multiple ways to rome?
 data_output_internal <- data_ordered %>%
@@ -60,11 +62,11 @@ data_output_internal <- data_ordered %>%
 ################################################################################
 # REF FILE GENERATION
 
-refOriginal = read.table("~/Downloads/vocabulary_download_v5_{c92fd646-74fd-400e-83fb-8949b7e01f44}_1725629157973/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
+refOriginal = read.table("D:/git/KnowledgeGraph/data/CONCEPT.csv", sep="\t", quote = "", fill = TRUE, header = TRUE)
 
 ref <- refOriginal %>%
   select(concept_id, concept_name, domain_id, standard_concept) %>%
   # filter(concept_class_id == "Clinical Finding")
   filter(domain_id == "Condition" | domain_id == "Observation" | domain_id == "Measurement" | domain_id == "Spec Anatomic Site" | domain_id == "Procedure" | domain_id == "Relationship")
 
-write.csv(ref, file="~/Downloads/vocabulary_download_v5_{c92fd646-74fd-400e-83fb-8949b7e01f44}_1725629157973/ref.csv", row.names=FALSE)
+write.csv(ref, file="D:/git/KnowledgeGraph/data/ref.csv", row.names=FALSE)

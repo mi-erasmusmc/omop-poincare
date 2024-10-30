@@ -23,6 +23,9 @@ import numpy as np
 from scipy.sparse import lil_matrix
 from tqdm import tqdm
 from deprecated import deprecated
+import torch
+import os
+import polars as pl
 
 # --------------------------------------------------------------------------- #
 #                  OWN IMPORTS                                                #
@@ -185,3 +188,61 @@ def get_dict_data(objects, ref, dict_type="name"):
             dict_data[key] = ref.loc[ref['concept_id'] == value].concept_name.values[0]
 
     return dict_data
+
+def write_tensorflow_projector_data(model_path, ref_csv_path, output_dir='output'):
+    state = torch.load(model_path)
+    state_dict = state['state_dict']
+
+    # Print all keys in the state dictionary to find the correct one
+    print("Available keys in the state dictionary:")
+    for key in state_dict.keys():
+        print(key)
+
+    embeddings = state_dict['embedding.weight'].cpu().numpy()
+    names = state['names']
+
+    print("First 100 embedding weights:")
+    for i in range(100):
+        print(f"Embedding {i}: {embeddings[i]}")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(os.path.join(output_dir, 'vecs.tsv'), 'w') as f_out:
+        for record in embeddings:
+            f_out.write('\t'.join(map(str, record)) + '\n')
+
+    with open(os.path.join(output_dir, 'labels.tsv'), 'w') as f_out:
+        for name in names:
+            f_out.write(str(name) + '\n')
+
+    ########
+    # Polars operations for joining and getting the names
+    ref_df = pl.read_csv(ref_csv_path)
+    labels_df = pl.read_csv(os.path.join(output_dir, 'labels.tsv'), has_header=False, new_columns=['concept_id'])
+
+    # Convert concept_id column to integer
+    labels_df = labels_df.with_columns(pl.col('concept_id').cast(pl.Int64))
+
+    # Perform the join to get the names
+    joined_df = labels_df.join(ref_df, on='concept_id', how='left')
+
+    # Select only the concept_name column and write to labels-name.tsv
+    labels_name_df = joined_df.select('concept_name')
+    labels_name_tsv_path = os.path.join(output_dir, 'labels-name.tsv')
+    # We write a CSV and then replace commas with tabs
+    labels_name_df.write_csv(labels_name_tsv_path, has_header=False)
+
+    # As Polars writes with default comma separators, replace commas with tabs
+    with open(labels_name_tsv_path, 'r') as f:
+        content = f.read().replace(',', '\t')
+
+    with open(labels_name_tsv_path, 'w') as f:
+        f.write(content)
+
+def convert_embedding_for_plp(input_filepath, output_filepath):
+    old_state = torch.load(input_filepath, map_location='cpu')
+    embeddings = old_state['state_dict']['embedding.weight'].to(dtype=torch.float32).cpu()
+    concept_ids = torch.tensor(old_state['names'], dtype=torch.int64).cpu()
+    new_state = {'concept_ids': concept_ids, 'embeddings': embeddings}
+    torch.save(new_state, output_filepath)
+

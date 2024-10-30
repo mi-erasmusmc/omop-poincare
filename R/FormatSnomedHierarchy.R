@@ -1,7 +1,7 @@
 library(magrittr)
 library(dplyr)
 
-test <- read.csv("C:/Users/luish/Downloads/CONCEPT_ANCESTOR.csv", sep='\t')
+test <- read.csv("C:/Users/luish/Downloads/snomed/CONCEPT_ANCESTOR.csv", sep='\t')
 
 runPlp_gerda <- readRDS("D:/git/transfer-learning/models-full-l1/GERDA_Full/plpResult/runPlp.rds")
 runPlp_mdcr <- readRDS("D:/git/transfer-learning/models-full-l1/MDCR_Full/plpResult/runPlp.rds")
@@ -66,6 +66,20 @@ saveRDS(set_ipci, file.path("./data", "set_ipci.RDS"))
 clinical_finding_concept_id <- 441840
 set <- c(set_gerda, set_mdcr, set_opehr, set_opses, set_ipci, clinical_finding_concept_id)
 set <- unique(set)
+
+countIdentical <- function(a, b) {
+  sum(pmin(
+    table(a[a %in% intersect(a, b)]),
+    table(b[b %in% intersect(a, b)])
+  ))
+}
+
+countIdentical(set_gerda, set_ipci)
+countIdentical(set_gerda, set_mdcr)
+countIdentical(set_gerda, set_opehr)
+countIdentical(set_gerda, set_opses)
+
+
 
 
 ################################################################################

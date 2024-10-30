@@ -7,8 +7,8 @@ library(readr)
 options(andromedaTempFolder = "D:/temp")
 options(arrow.int64_downcast = FALSE)
 
-plpDataDir <- "D:/git/omop-poincare/data/data_original/optum_ehr"
-# plpDataDir <- "D:/git/omop-poincare/data/data_poincare/emc_ipci_old"
+# plpDataDir <- "D:/git/omop-poincare/data/data_original/truven_mdcr"
+plpDataDir <- "D:/git/omop-poincare/data/data_poincare/truven_mdcr"
 
 data_in <- PatientLevelPrediction::loadPlpData(plpDataDir)
 
@@ -49,8 +49,8 @@ covariateRef_final <- data.frame(
 )
 
 #### remove this once we have correct ipci data
-covariates_embedding_final <- covariates_embedding_final %>%
-  dplyr::filter(!is.na(covariateValue))
+# covariates_embedding_final <- covariates_embedding_final %>%
+#   dplyr::filter(!is.na(covariateValue))
 
 
 data <- Andromeda::andromeda(covariates = covariates_embedding_final,
@@ -90,6 +90,6 @@ class(result) <- "plpData"
 
 # attr(covariateData, "metaData") <- NULL
 
-PatientLevelPrediction::savePlpData(result, file.path("./data", "data_poincare", "optum_extended_ses"))
+PatientLevelPrediction::savePlpData(result, file.path("./data", "data_poincare", "truven_mdcr"))
 
 ################
