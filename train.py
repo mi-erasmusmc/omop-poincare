@@ -111,7 +111,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
             epoch_loss /= data.shape[0] // batch_size
             print(f"\nMean rank: {mean_rank}, loss: {epoch_loss}")
 
-            if mean_rank < last_loss or last_loss == 0:
+            if True: # mean_rank < last_loss or last_loss == 0:
                 last_loss = mean_rank
                 stop = 0
                 state = {
