@@ -199,7 +199,7 @@ def write_tensorflow_projector_data(model_path, ref_csv_path, output_dir='output
         print(key)
 
     embeddings = state_dict['embedding.weight'].cpu().numpy()
-    names = state['names']
+    names = state['concept_ids']
 
     print("First 100 embedding weights:")
     for i in range(100):
@@ -230,7 +230,7 @@ def write_tensorflow_projector_data(model_path, ref_csv_path, output_dir='output
     labels_name_df = joined_df.select('concept_name')
     labels_name_tsv_path = os.path.join(output_dir, 'labels-name.tsv')
     # We write a CSV and then replace commas with tabs
-    labels_name_df.write_csv(labels_name_tsv_path, has_header=False)
+    labels_name_df.write_csv(labels_name_tsv_path)
 
     # As Polars writes with default comma separators, replace commas with tabs
     with open(labels_name_tsv_path, 'r') as f:
@@ -242,7 +242,7 @@ def write_tensorflow_projector_data(model_path, ref_csv_path, output_dir='output
 def convert_embedding_for_plp(input_filepath, output_filepath):
     old_state = torch.load(input_filepath, map_location='cpu')
     embeddings = old_state['state_dict']['embedding.weight'].to(dtype=torch.float32).cpu()
-    concept_ids = torch.tensor(old_state['names'], dtype=torch.int64).cpu()
+    concept_ids = torch.tensor(old_state['concept_ids'], dtype=torch.int64).cpu()
     new_state = {'concept_ids': concept_ids, 'embeddings': embeddings}
     torch.save(new_state, output_filepath)
 
