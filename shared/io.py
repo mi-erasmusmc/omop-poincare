@@ -20,7 +20,7 @@ import pathlib
 # --------------------------------------------------------------------------- #
 import pandas as pd
 import numpy as np
-from scipy.sparse import lil_matrix
+from scipy.sparse import coo_array
 from tqdm import tqdm
 from deprecated import deprecated
 import torch
@@ -49,7 +49,7 @@ def read_ref(path):
     :param path: Path to reference of the form [concept_id, concept_name]
     :return:
     """
-    return pd.read_csv(path)
+    return pd.read_csv(path, engine='pyarrow')
 
 
 @deprecated
@@ -99,8 +99,7 @@ def read_data(path, skip_stats=True, remove_duplicates=False):
         df = pd.read_csv(path, usecols=[0, 1, 3], engine='c',
                          delim_whitespace=True)
     else:
-        df = pd.read_csv(path, usecols=[0, 1], engine='c', escapechar='\\',
-                         na_filter=False)
+        df = pd.read_csv(path, engine='pyarrow', na_filter=False)
 
     ids, names = pd.factorize(df.iloc[:, :2].values.reshape(-1))
     ids = ids.reshape(-1, 2).astype('int')
@@ -118,19 +117,18 @@ def read_data(path, skip_stats=True, remove_duplicates=False):
         ids = ids[(df.iloc[:, 2] != "no-rel") & (df.iloc[:, 2] != "ant")]
 
     voc_size = len(names)
-    adjacency_matrix = lil_matrix((voc_size, voc_size), dtype=np.uint8)
-    adjacency_loop = lil_matrix((voc_size, voc_size), dtype=np.uint8)
-    for i, row in enumerate(ids):
-        adjacency_matrix[row[0], row[1]] = 1
+    adjacency_data = np.ones(ids.shape[0], dtype=np.bool_)
+    adjacency_coords = (ids[:, 0], ids[:, 1])
+    adjacency_matrix = coo_array((adjacency_data, adjacency_coords), (voc_size, voc_size))
+    adjacency_matrix = adjacency_matrix.tocsr()
 
-        adjacency_loop[row[0], row[1]] = 1
-        adjacency_loop[row[0], row[0]] = 1
-        adjacency_loop[row[1], row[1]] = 1
+    adjacency_loop_data = np.ones(ids.shape[0] * 3, dtype=np.bool_)
+    adjacency_loop_coords = (np.concatenate((ids[:, 0], ids[:, 0], ids[:, 1])),
+                             np.concatenate((ids[:, 1], ids[:, 0], ids[:, 1])))
+    adjacency_loop = coo_array((adjacency_loop_data, adjacency_loop_coords), (voc_size, voc_size))
 
-    neighbors = []
-    for i in range(voc_size):
-        neighbors.append(adjacency_matrix[i].nonzero()[1])
 
+    neighbors = [adjacency_matrix.indices[adjacency_matrix.indptr[i]:adjacency_matrix.indptr[i + 1]] for i in range(voc_size)]
     r = np.array(adjacency_matrix.sum(axis=1).astype(np.float32))
     diff_summed = (r * (r - 1) / 2).sum()
 
