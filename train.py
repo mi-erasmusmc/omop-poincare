@@ -48,7 +48,7 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
           out_dimensions, n_neg_samples, n_epochs, n_burn_in=40, device="cpu"):
 
     if device == "cuda:0":
-        batch_size = 4
+        batch_size = 4096
     else:
         batch_size = 4
 
@@ -65,21 +65,25 @@ def train(data, weights, objects, neighbors, diff_summed, num_relations,
 
     epoch_loss = 0.0
     last_loss = 0.0
+    max_batch_count = 10
     n = 0
     while n < n_epochs:
         print(f"Epoch: {n}")
         if n < n_burn_in:
-            lr = 0.003
+            lr = 0.00003
             sampler = cat_dist
         else:
-            lr = 0.3
+            lr = 0.003
             sampler = unif_dist
 
         perm = torch.randperm(data.shape[0])
         # dataset_rnd = data.loc[perm, ]
         dataset_rnd = torch.as_tensor(data[perm, ]).to(device)
 
-        for i in tqdm(range(0, data.shape[0] - data.shape[0] % batch_size, batch_size), disable=True):
+        for i in tqdm(range(0, data.shape[0] - data.shape[0] % batch_size, batch_size), disable=False):
+            if (i // batch_size) > max_batch_count:
+                print(f"Max batch count reached: {max_batch_count}")
+                break
             batch_X[:, :2] = dataset_rnd[i: i + batch_size]
 
             for j in range(batch_size):

@@ -1,9 +1,7 @@
 **/.DS_Store
 **/__pycache__
 **/*.ipynb_checkpoints/
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf/
+.idea/
 venv/
 output/*
 data/*
